@@ -38,11 +38,14 @@ static PyObject *
 call_profile_func(_PyLegacyEventHandler *self, PyObject *arg)
 {
     PyThreadState *tstate = _PyThreadState_GET();
+    LOCK_SETUP();
     if (tstate->c_profilefunc == NULL) {
+        UNLOCK_SETUP();
         Py_RETURN_NONE;
     }
     PyFrameObject *frame = PyEval_GetFrame();
     if (frame == NULL) {
+        UNLOCK_SETUP();
         PyErr_SetString(PyExc_SystemError,
                         "Missing frame when calling profile function.");
         return NULL;
@@ -50,6 +53,7 @@ call_profile_func(_PyLegacyEventHandler *self, PyObject *arg)
     Py_INCREF(frame);
     int err = tstate->c_profilefunc(tstate->c_profileobj, frame, self->event, arg);
     Py_DECREF(frame);
+    UNLOCK_SETUP();
     if (err) {
         return NULL;
     }
