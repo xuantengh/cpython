@@ -1082,6 +1082,41 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(threading.getprofile(), old_profile)
         self.assertEqual(sys.getprofile(), old_profile)
 
+    def test_setprofile_all_threads(self):
+        done = threading.Event()
+        def foo():
+            pass
+
+        def my_profile(frame, event, arg):
+            return None
+
+        def bg_thread():
+            while not done.is_set():
+                foo()
+                foo()
+                foo()
+                foo()
+                foo()
+                foo()
+                foo()
+                foo()
+                foo()
+                foo()
+
+        bg_threads = []
+        for i in range(10):
+            t = threading.Thread(target=bg_thread)
+            t.start()
+            bg_threads.append(t)
+
+        for i in range(100):
+            sys._setprofileallthreads(my_profile)
+            sys._setprofileallthreads(None)
+
+        done.set()
+        for t in bg_threads:
+            t.join()
+
     def test_locals_at_exit(self):
         # bpo-19466: thread locals must not be deleted before destructors
         # are called
